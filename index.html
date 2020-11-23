@@ -24,13 +24,12 @@
         </div>
         <div class="row">
           <div class="col">
-            <h2 id="output"> Say a command to get started!</h2>
+            <h2 id="output">We hope you enjoy your visit to Hamilton, Ontario! Say a command to get started.</h2>
           </div>
         </div>
       </div>
       <div class="col">
         <div id="myMap" ></div>
-        <!-- <div id="myMap" style="width:1000;height:600;float:left;"></div> -->
       </div>
   </div>
   
@@ -181,47 +180,6 @@
         else if (type.includes("parks"))
         {
           console.log("listening to parks");
-          //var map = new Microsoft.Maps.Map('#myMap', {});
-
-        // var center = map.getCenter();
-
-        //Create array of locations to form a ring.
-        // var exteriorRing = [
-        //     new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 ),
-        //     new Microsoft.Maps.Location(43.323676847261396, -80.208844783000274 ),
-        //     new Microsoft.Maps.Location(43.32379724836548, -80.209335394160618 ),
-        //     new Microsoft.Maps.Location(43.322666032509588, -80.209386660621561 ),
-        //     new Microsoft.Maps.Location(43.322329499377965, -80.208022993234806 ),
-        //     new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 )
-        // ];
-
-        // var exteriorRing = getLocationsArray(parks.features[515].geometry.coordinates)
-        // console.log(parks.features[515].properties.NAME)
-
-        //Create a polygon
-        // var polygon = new Microsoft.Maps.Polygon(exteriorRing, {
-        //     fillColor: 'rgba(0, 255, 0, 0.5)',
-        //     strokeColor: 'red',
-        //     strokeThickness: 2
-        // });
-
-        // var pin = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 ),
-        // {title: parks.features[0].properties.NAME}
-        // );
-
-        //Add the polygon to map
-        //map.entities.push(polygon);
-        // map.entities.push(
-        //       new Microsoft.Maps.Pushpin(
-        //         new Microsoft.Maps.Location(
-        //           43.24169053254478,  
-        //         -79.900696808188712
-                  
-        //         ),
-        //         {title: "Chedoke"}
-        //       )
-        //     );
-        //map.entities.push(pin);
           for (i = 0; i < parks.features.length; i++)
           {
             map.entities.push(
@@ -234,15 +192,21 @@
                   }
               )   
             );
-            map.entities.push(
-              new Microsoft.Maps.Pushpin(
-                new Microsoft.Maps.Location(
-                  parks.features[i].geometry.coordinates[0][0][1],
-                  parks.features[i].geometry.coordinates[0][0][0]
-                ),
-                {title: parks.features[i].properties.NAME}
-              )
-            )
+            // map.entities.push(
+            //   new Microsoft.Maps.Pushpin(
+            //     new Microsoft.Maps.Location(
+            //       parks.features[i].geometry.coordinates[0][0][1],
+            //       parks.features[i].geometry.coordinates[0][0][0]
+            //     ),
+            //     {title: parks.features[i].properties.NAME}
+            //   )
+            // )
+            Microsoft.Maps.loadModule('Microsoft.Maps.SpatialMath', function () {
+              var polygon = Microsoft.Maps.TestDataGenerator.getPolygons(1, map.getBounds(), null, 0.5, null, true);
+              map.entities.push(polygon);
+              centroid = new Microsoft.Maps.Pushpin(Microsoft.Maps.SpatialMath.Geometry.centroid(polygon), { text: 'C' });
+              map.entities.push(centroid);
+          });
           }
         }          
       },
