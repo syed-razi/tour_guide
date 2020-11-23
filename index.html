@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="custom.css">
+  <title>Tourism Hamilton Application</title>
+  <style>p { font-size: 24px; }</style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <div class="row">
+          <div class="col text-center">
+            <svg id="mic" width="3em" height="3em" viewBox="0 0 16 16" class="bi bi-mic-fill text-mic" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
+              <path fill-rule="evenodd" d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <p><strong>Script:</strong> try saying the below in sequence... <br/> <br />
+        
+              Show places of worship <br />
+              Clear map <br />
+              Show waterfalls <br />
+              Clear map <br />
+              Show parks <br />
+              Clear map <br />
+              </p>
+            <p><strong>Information:</strong> <span id="output"></span></p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div id="myMap" ></div>
+        <!-- <div id="myMap" style="width:1000;height:600;float:left;"></div> -->
+      </div>
+  </div>
+  
+ 
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+
+  
+
+  <!-- Load in the annyang library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script>
+
+  <!-- 
+    Load in fire station data obtained from this data set:
+    https://open.hamilton.ca/datasets/dbb028cd6bcc4b218c607952b760fd04_5
+
+    This JavaScript (JSON) data was obtained by clicking on APIs -> GeoJSON,
+    copying the URL into the browser and hitting enter, I downloaded the 
+    file, saved it as firestations.js, and added "var firestations = " at 
+    the top so I can access the object with that variable name in this script.
+  -->
+  <script src="firestations.js"></script>
+
+  <!--- The library location data was obtained in the same way... -->
+  <script src="libraries.js"></script>
+  <script src="places_of_worship.js"></script>
+  <script src="waterfalls.js"></script>
+  <script src="parks.js"></script>
+
+
+  <script>
+
+  // Welcome the user after they click the start button
+  // document.getElementById("start").onclick = function()
+  // {
+  //   var synth = window.speechSynthesis;
+  //   var utterText = "Welcome! Welcome! We hope you enjoy your stay in Hamilton!";
+  //   var utterThis = new SpeechSynthesisUtterance(utterText);
+  //   utterThis.pitch = 1.0;
+  //   utterThis.rate = 0.9;
+  //   synth.speak(utterThis);
+  // }
+
+  if (annyang) {
+
+    // Commands are defined as keys and values in an object, the key is the 
+    // text for the command, and the value is callback function (i.e. event 
+    // handler) to call for the command
+    var commands = {
+
+      // If "information about X" is uttered, we show on the page "Here is some
+      // information about X".  
+      "information about *place" :
+      function(place) 
+      {
+        document.getElementById("output").innerHTML = 
+          "Here is some information about " + place;
+      },
+
+      // If "show firestations" or "show libraries" are uttered, the map will 
+      // be populated with pushpins for firestations or libraries
+      //
+      // We use the firestations.js and libraries.js data above to do so, note 
+      // that we know how to access the data structure be examining the data 
+      // structure... so we can see for example that firestations.features 
+      // contains an array of objects with firestation data, and we can see 
+      // that firestations.features[i].properties contains latitude, longitude
+      // and name data.  
+      //
+      // You could use a tool like this to help you visualize the data:
+      //    http://jsonviewer.stack.hu/
+      //
+      "show *type": 
+      function(type)
+      {
+        // if type includes "fire" we assume the user wants to see firestations
+        if (type.includes("fire"))
+        {
+          // loop through the array of firestations in the firestations.js data
+          for (i = 0; i < firestations.features.length; i++) 
+          {
+            // add a pushpin to the map for each firestation
+            map.entities.push(
+              new Microsoft.Maps.Pushpin(
+                new Microsoft.Maps.Location(
+                  // use the latitude & longitude data for the pushpin position
+                  firestations.features[i].properties.LATITUDE,
+                  firestations.features[i].properties.LONGITUDE
+                ),
+                // use the firestation name for the label 
+                {title: firestations.features[i].properties.NAME}
+              ));
+          }
+        }
+        // if type includes "libraries" we assume user wants to see libraries
+        else if (type.includes("libraries"))
+        {
+          // loop through the array of libraries in the libraries.js data
+          for (i = 0; i < libraries.features.length; i++) 
+          {
+            // add a pushpin to the map for each library
+            map.entities.push(
+              new Microsoft.Maps.Pushpin(
+                new Microsoft.Maps.Location(
+                  // use the latitude & longitude data for the pushpin position
+                  libraries.features[i].properties.LATITUDE,
+                  libraries.features[i].properties.LONGITUDE
+                ),
+                // use the library name for the label 
+                {title: libraries.features[i].properties.NAME}
+              ));
+          }
+        }
+        else if (type.includes("worship"))
+        {
+          for (i = 0; i < placesOfWorship.features.length; i++)
+          {
+            map.entities.push(
+              new Microsoft.Maps.Pushpin(
+                new Microsoft.Maps.Location(
+                  placesOfWorship.features[i].properties.LATITUDE,
+                  placesOfWorship.features[i].properties.LONGITUDE
+                ),
+                {title: placesOfWorship.features[i].properties.NAME}
+              )
+            );
+          }
+        }
+        else if (type.includes("waterfalls"))
+        {
+          for (i = 0; i < waterfalls.features.length; i++)
+          {
+            map.entities.push(
+              new Microsoft.Maps.Pushpin(
+                new Microsoft.Maps.Location(
+                  waterfalls.features[i].properties.LATITUDE,
+                  waterfalls.features[i].properties.LONGITUDE
+                ),
+                {title: waterfalls.features[i].properties.NAME}
+              )
+            );
+          }
+        }  
+        else if (type.includes("parks"))
+        {
+          console.log("listening to parks");
+          //var map = new Microsoft.Maps.Map('#myMap', {});
+
+        // var center = map.getCenter();
+
+        //Create array of locations to form a ring.
+        // var exteriorRing = [
+        //     new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 ),
+        //     new Microsoft.Maps.Location(43.323676847261396, -80.208844783000274 ),
+        //     new Microsoft.Maps.Location(43.32379724836548, -80.209335394160618 ),
+        //     new Microsoft.Maps.Location(43.322666032509588, -80.209386660621561 ),
+        //     new Microsoft.Maps.Location(43.322329499377965, -80.208022993234806 ),
+        //     new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 )
+        // ];
+
+        // var exteriorRing = getLocationsArray(parks.features[515].geometry.coordinates)
+        // console.log(parks.features[515].properties.NAME)
+
+        //Create a polygon
+        // var polygon = new Microsoft.Maps.Polygon(exteriorRing, {
+        //     fillColor: 'rgba(0, 255, 0, 0.5)',
+        //     strokeColor: 'red',
+        //     strokeThickness: 2
+        // });
+
+        // var pin = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(43.323358607569268, -80.20754803629211 ),
+        // {title: parks.features[0].properties.NAME}
+        // );
+
+        //Add the polygon to map
+        //map.entities.push(polygon);
+        // map.entities.push(
+        //       new Microsoft.Maps.Pushpin(
+        //         new Microsoft.Maps.Location(
+        //           43.24169053254478,  
+        //         -79.900696808188712
+                  
+        //         ),
+        //         {title: "Chedoke"}
+        //       )
+        //     );
+        //map.entities.push(pin);
+          for (i = 0; i < parks.features.length; i++)
+          {
+            map.entities.push(
+              new Microsoft.Maps.Polygon(
+                  getLocationsArray(parks.features[i].geometry.coordinates),
+                  {
+                      fillColor: 'rgba(0, 255, 0, 0.5)',
+                      strokeColor: 'red',
+                      strokeThickness: 2
+                  }
+              )   
+            );
+            map.entities.push(
+              new Microsoft.Maps.Pushpin(
+                new Microsoft.Maps.Location(
+                  parks.features[i].geometry.coordinates[0][0][1],
+                  parks.features[i].geometry.coordinates[0][0][0]
+                ),
+                {title: parks.features[i].properties.NAME}
+              )
+            )
+          }
+        }          
+      },
+
+      // If "clear map" is uttered all pushpins are removed from the map
+      "clear map" :
+      function()
+      {
+        // Code to remove all pushpins is taken directly from the API docs:
+        // https://www.bing.com/api/maps/sdkrelease/mapcontrol/isdk/deletepushpins
+        for (i = map.entities.getLength() - 1; i >= 0; i--) {
+          var pushpin = map.entities.get(i);
+          if (pushpin instanceof Microsoft.Maps.Pushpin) {
+            map.entities.removeAt(i);
+          }
+        }
+      },
+
+      // Any other utterance will be caught by this case, and we use the 
+      // Bing Maps geolocation service to find a latitude and longitude 
+      // position based on the utterance:
+      //  https://www.bing.com/api/maps/sdkrelease/mapcontrol/isdk/searchbyaddress#JS
+      // We then place a pushpin on the map at that location.
+      //
+      // So if we say "Dundas, Ontario" or "Toronto, Ontario" it will 
+      // attempt to f
+      "*catchall" :
+      function(catchall) 
+      {
+        var requestOptions = {
+          bounds: map.getBounds(),
+          where: catchall,
+          callback: function (answer, userData) {
+              map.setView({ bounds: answer.results[0].bestView });
+              map.entities.push(
+                new Microsoft.Maps.Pushpin(
+                  answer.results[0].location,
+                  {title: catchall}
+                )
+              );
+          }
+        };
+        searchManager.geocode(requestOptions);
+
+      }
+    };
+  
+    // Add our commands to annyang
+    annyang.addCommands(commands);
+  
+    // Start listening. You can call this here, or attach this call to an event, button, etc.
+    annyang.start({ autoRestart: true, continuous: false });
+
+    annyang.addCallback('soundstart', function() {
+      //annyang.start();
+      console.log('sound detected');
+      listening();
+    });
+
+    annyang.addCallback('result', function() {
+      //annyang.pause();
+      console.log('sound stopped');
+      notListening();
+      //annyang.start({ autoRestart: false, continuous: false });
+    });
+
+  }
+
+
+  function listening() {
+    document.getElementById("mic").style.color = "red";
+  }
+
+  function notListening() {
+    document.getElementById("mic").style.color = "black";
+  }
+
+//   $(document).ready(function(){
+
+//     $(function listening() {
+//     $("#mic".css( { "color" : "red"  } ))
+//   });
+
+// });
+
+// $(document).ready(function(){  
+//   window.listening = function(){  
+//     $("#mic".css( { "color" : "red"  } ))
+//   }  
+// });
+
+  
+
+
+  // Loads the map, called after Bing map library finishes loading
+  function loadmap()
+  {
+    // Create a map centered on Hamilton, Ontario
+    map = new Microsoft.Maps.Map(document.getElementById("myMap"), 
+      {
+        center: new Microsoft.Maps.Location(43.2557, -79.8711),
+        // we could set additional options when we create the map...
+        // mapTypeId: Microsoft.Maps.MapTypeId.aerial,
+        // zoom: 13       
+      });
+
+    // Load the search manager that allows us to search for locations 
+    // (lat and long positions) based on an address, e.g. Toronto, Ontario
+    Microsoft.Maps.loadModule('Microsoft.Maps.Search', function () {
+      searchManager = new Microsoft.Maps.Search.SearchManager(map);
+    });
+  }
+
+  function getLocationsArray(polygon)
+  {
+    var locationsArray = []
+    var coordinatesArray = polygon[0];
+    for (var i = 0; i < coordinatesArray.length; i++)
+    {
+      locationsArray.push(new Microsoft.Maps.Location(coordinatesArray[i][1], coordinatesArray[i][0]));
+    }
+    console.log(locationsArray);
+    return locationsArray;
+  }
+  </script>
+  <script src="https://www.bing.com/api/maps/mapcontrol?key=Ao9pr871PkWBHGRHO0L9f_kuQRMt5jgnmM-oQ8i0e6Ll-8DNNEgrcbiHr_wjaKq4&callback=loadmap" async defer></script>
+
+</body>
+</html>
+

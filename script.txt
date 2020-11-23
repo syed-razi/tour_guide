@@ -1,0 +1,6 @@
+1) Show places of worship
+2) Clear map
+3) Show waterfalls
+4) Clear map
+5) Show parks
+6) Clear map

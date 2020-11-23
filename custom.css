@@ -1,0 +1,17 @@
+.body {
+    background-color: brown;
+}
+
+.container {
+    margin: 30px;
+    border: solid red;
+}
+
+.row {
+    border: solid black;
+    margin: 5px;
+}
+
+.col {
+    border: dotted blue;
+}
