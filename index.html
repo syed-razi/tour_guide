@@ -24,16 +24,7 @@
         </div>
         <div class="row">
           <div class="col">
-            <p><strong>Script:</strong> try saying the below in sequence... <br/> <br />
-        
-              Show places of worship <br />
-              Clear map <br />
-              Show waterfalls <br />
-              Clear map <br />
-              Show parks <br />
-              Clear map <br />
-              </p>
-            <p><strong>Information:</strong> <span id="output"></span></p>
+            <h2 id="output"> Say a command to get started!</h2>
           </div>
         </div>
       </div>
@@ -306,18 +297,25 @@
     annyang.start({ autoRestart: true, continuous: false });
 
     annyang.addCallback('soundstart', function() {
-      //annyang.start();
       console.log('sound detected');
       listening();
     });
 
     annyang.addCallback('result', function() {
-      //annyang.pause();
       console.log('sound stopped');
       notListening();
-      //annyang.start({ autoRestart: false, continuous: false });
     });
 
+    annyang.addCallback('result', function(phrases) {
+      displayPhrase(phrases[0]);
+      console.log("I think the user said: ", phrases[0]);
+      console.log("But then again, it could be any of the following: ", phrases);
+    });
+
+  }
+
+  function displayPhrase(phrase) {
+    document.getElementById("output").innerHTML = "I think you said: " + phrase;
   }
 
 
@@ -328,22 +326,6 @@
   function notListening() {
     document.getElementById("mic").style.color = "black";
   }
-
-//   $(document).ready(function(){
-
-//     $(function listening() {
-//     $("#mic".css( { "color" : "red"  } ))
-//   });
-
-// });
-
-// $(document).ready(function(){  
-//   window.listening = function(){  
-//     $("#mic".css( { "color" : "red"  } ))
-//   }  
-// });
-
-  
 
 
   // Loads the map, called after Bing map library finishes loading
